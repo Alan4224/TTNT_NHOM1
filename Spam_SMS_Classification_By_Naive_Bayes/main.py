@@ -1,5 +1,9 @@
+import matplotlib
 import pandas as pd
 import nltk
+import matplotlib.pyplot as plt
+import seaborn as sns
+plt.style.use('seaborn-v0_8-whitegrid')
 from nltk.corpus import stopwords
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import MultinomialNB
@@ -7,8 +11,8 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score, f1_score
 
 # Tải xuống các gói dữ liệu cần thiết từ NLTK
-nltk.download('punkt')
-nltk.download('stopwords')
+# nltk.download('punkt')
+# nltk.download('stopwords')
 
 def preprocess_text(text):
     # Chuyển văn bản thành chữ thường và tách từ
@@ -19,6 +23,22 @@ def preprocess_text(text):
 
 # Đọc dữ liệu từ file CSV
 spam_df = pd.read_csv("sms_spam.csv", encoding='latin-1')
+print(spam_df.info())
+print(spam_df.head())
+
+# Tạo biểu đồ đếm số lượng tin nhắn spam và ham
+plt.figure(figsize=(5,2))
+sns.countplot(x='Category',data=spam_df,palette='inferno', hue='Category', legend=False)
+plt.title('Phân Bố Tin Nhắn Spam Và Bình Thường')
+plt.show()
+
+# Độ dài tin nhắn
+spam_df['length'] = spam_df['Message'].apply(len)
+axes=spam_df.hist(column='length',by='Category',bins=50,figsize=(10,3))
+for ax in axes.flatten():
+    ax.set_xlabel("Độ Dài Tin Nhắn (Số Ký Tự)")
+    ax.set_ylabel("Số Lượng Tin Nhắn")
+plt.show()
 
 # Chuyển đổi nhãn từ 'spam' và 'ham' sang số (1 cho spam và 0 cho ham)
 spam_df['spam'] = spam_df['Category'].apply(lambda x: 1 if x == 'spam' else 0)
@@ -27,7 +47,7 @@ spam_df['spam'] = spam_df['Category'].apply(lambda x: 1 if x == 'spam' else 0)
 spam_df['Message'] = spam_df['Message'].apply(preprocess_text)
 
 # Chia dữ liệu thành tập huấn luyện và kiểm tra (75% huấn luyện, 25% kiểm tra)
-x_train, x_test, y_train, y_test = train_test_split(spam_df.Message, spam_df.spam, test_size=0.25, stratify=spam_df.spam, random_state=1)
+x_train, x_test, y_train, y_test = train_test_split(spam_df.Message, spam_df.spam, test_size=0.25, stratify=spam_df.spam, random_state=42)
 
 # Khởi tạo CountVectorizer để chuyển đổi văn bản thành ma trận đặc trưng
 cv = CountVectorizer()
