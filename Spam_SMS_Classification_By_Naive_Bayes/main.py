@@ -10,9 +10,9 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, recall_score, f1_score
 
-# Tải xuống các gói dữ liệu cần thiết từ NLTK
-# nltk.download('punkt')
-# nltk.download('stopwords')
+#Tải xuống các gói dữ liệu cần thiết từ NLTK
+nltk.download('punkt')
+nltk.download('stopwords')
 
 def preprocess_text(text):
     # Chuyển văn bản thành chữ thường và tách từ
@@ -24,20 +24,15 @@ def preprocess_text(text):
 # Đọc dữ liệu từ file CSV
 spam_df = pd.read_csv("sms_spam.csv", encoding='latin-1')
 print(spam_df.info())
-print(spam_df.head())
+print(spam_df)
 
-# Tạo biểu đồ đếm số lượng tin nhắn spam và ham
-plt.figure(figsize=(5,2))
-sns.countplot(x='Category',data=spam_df,palette='inferno', hue='Category', legend=False)
+# Tạo biểu đồ tròn để xem tỉ lệ của các nhãn
+plt.figure(figsize=(5,5))
+spam_counts = spam_df['Category'].value_counts()
+plt.pie(spam_counts, labels=spam_counts.index, colors=sns.color_palette('pastel', len(spam_counts)),
+        autopct='%1.1f%%', startangle=140, explode=(0.1, 0))
 plt.title('Phân Bố Tin Nhắn Spam Và Bình Thường')
-plt.show()
-
-# Độ dài tin nhắn
-spam_df['length'] = spam_df['Message'].apply(len)
-axes=spam_df.hist(column='length',by='Category',bins=50,figsize=(10,3))
-for ax in axes.flatten():
-    ax.set_xlabel("Độ Dài Tin Nhắn (Số Ký Tự)")
-    ax.set_ylabel("Số Lượng Tin Nhắn")
+plt.axis('equal')
 plt.show()
 
 # Chuyển đổi nhãn từ 'spam' và 'ham' sang số (1 cho spam và 0 cho ham)
@@ -45,15 +40,16 @@ spam_df['spam'] = spam_df['Category'].apply(lambda x: 1 if x == 'spam' else 0)
 
 # Tiền xử lý các tin nhắn bằng hàm preprocess_text
 spam_df['Message'] = spam_df['Message'].apply(preprocess_text)
+print(spam_df.head())
 
 # Chia dữ liệu thành tập huấn luyện và kiểm tra (75% huấn luyện, 25% kiểm tra)
 x_train, x_test, y_train, y_test = train_test_split(spam_df.Message, spam_df.spam, test_size=0.25, stratify=spam_df.spam, random_state=42)
 
 # Khởi tạo CountVectorizer để chuyển đổi văn bản thành ma trận đặc trưng
 cv = CountVectorizer()
-
 # Chuyển đổi tập huấn luyện thành ma trận đếm
 x_train_count = cv.fit_transform(x_train.values)
+print(x_train_count.shape)
 
 # Khởi tạo và huấn luyện mô hình Multinomial Naive Bayes
 multinomial = MultinomialNB()
@@ -66,8 +62,6 @@ x_test_count = cv.transform(x_test)
 y_pred = multinomial.predict(x_test_count)
 
 # Tính toán các chỉ số đánh giá
-accuracy_nb = round(accuracy_score(y_test, y_pred) * 100, 2)
-acc_multinomial = round(multinomial.score(x_train_count, y_train) * 100, 2)
 cm = confusion_matrix(y_test, y_pred)
 accuracy = accuracy_score(y_test, y_pred)
 precision = precision_score(y_test, y_pred, average='binary')
